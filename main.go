@@ -50,9 +50,14 @@ func NewBitmap(w int, h int, number int) *Bitmap {
 }
 
 func (bitmap *Bitmap) SetPixel(x int, y int) {
-	byte := x/8 + y*bitmap.W/8
+	// Each byte represents 8 vertical pixels in decreasing y order. Looking at an
+	// arbitrary byte, bit 0 is the highest y value, bit 7 is the lowest.
+	// Bytes are stored row-by-row, again in decreasing y order. With a 16x16
+	// bitmap, bytes 0-15 are (x,y) (0,8)...(15,15), and bytes 16-31 are
+	// (x,y) (0,0)...(15,7)
+	byte := (x + (bitmap.H-1-y)/8*bitmap.W)
 	bitmap.Pixels[y*bitmap.W+x] = 1
-	bitmap.PixelBytes[byte] |= (1 << uint8(x%8))
+	bitmap.PixelBytes[byte] |= (1 << uint8(7-y%8))
 }
 
 func (bitmap *Bitmap) PrintByteArray(out io.Writer) {
