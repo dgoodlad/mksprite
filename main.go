@@ -9,12 +9,10 @@ import (
 	"os"
 )
 
-const black = 0
-const white = 1
-
 func main() {
 	inPath := flag.String("in", "-", "input file or - for stdin")
 	outPath := flag.String("out", "-", "output file or - for stdout")
+	arrayName := flag.String("name", "sprite", "name of outputted array variable")
 	flag.Parse()
 
 	var input = io.Reader(os.Stdin)
@@ -42,8 +40,8 @@ func main() {
 	}
 
 	bounds := img.Bounds()
-	w := bounds.Max.X - bounds.Min.X
-	h := bounds.Max.Y - bounds.Min.Y
+	w := bounds.Dx()
+	h := bounds.Dy()
 	pixels := make([]uint8, w*h/8)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
@@ -58,7 +56,7 @@ func main() {
 		}
 	}
 
-	fmt.Fprintln(output, "const uint8_t PROGMEM sprite[] = {")
+	fmt.Fprintf(output, "const uint8_t PROGMEM %s[] = {\n", *arrayName)
 	fmt.Fprint(output, "  ")
 	for i, p := range pixels {
 		if i != 0 {
