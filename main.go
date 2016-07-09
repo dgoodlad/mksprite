@@ -146,7 +146,7 @@ func main() {
 	}
 
 	fmt.Fprintf(output, "const uint8_t %sFrameCount = %d;\n\n", *name, len(spritesheet.Frames))
-	fmt.Fprintf(output, "const **uint8_t %s = {\n", *name)
+	fmt.Fprintf(output, "const uint8_t PROGMEM %s[][%d] = {\n", *name, spritesheet.Frames[0].Rect.H*spritesheet.Frames[0].Rect.W/8)
 	for n, bitmap := range bitmaps {
 		if n != 0 {
 			fmt.Fprint(output, ",\n")
