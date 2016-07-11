@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 type FrameRect struct {
@@ -55,9 +56,9 @@ func (bitmap *Bitmap) SetPixel(x int, y int) {
 	// Bytes are stored row-by-row, again in decreasing y order. With a 16x16
 	// bitmap, bytes 0-15 are (x,y) (0,8)...(15,15), and bytes 16-31 are
 	// (x,y) (0,0)...(15,7)
-	byte := (x + (bitmap.H-1-y)/8*bitmap.W)
+	byte := (x + y/8*bitmap.W)
 	bitmap.Pixels[y*bitmap.W+x] = 1
-	bitmap.PixelBytes[byte] |= (1 << uint8(7-y%8))
+	bitmap.PixelBytes[byte] |= (1 << uint8(y%8))
 }
 
 func (bitmap *Bitmap) PrintByteArray(out io.Writer) {
@@ -71,7 +72,7 @@ func (bitmap *Bitmap) PrintByteArray(out io.Writer) {
 	fmt.Fprint(out, "}")
 }
 
-func (bitmap *Bitmap) PrintAsciiDicks(out io.Writer) {
+func (bitmap *Bitmap) PrintAscii(out io.Writer) {
 	fmt.Fprintf(out, "  /* Frame number %d\n", bitmap.Number)
 	for y := 0; y < bitmap.H; y++ {
 		if y != 0 {
@@ -145,14 +146,21 @@ func main() {
 		bitmaps[number] = bitmap
 	}
 
-	fmt.Fprintf(output, "const uint8_t %sFrameCount = %d;\n\n", *name, len(spritesheet.Frames))
-	fmt.Fprintf(output, "const uint8_t PROGMEM %s[][%d] = {\n", *name, spritesheet.Frames[0].Rect.H*spritesheet.Frames[0].Rect.W/8)
+	fmt.Fprintf(output, "#ifndef %s_H\n", strings.ToUpper(*name))
+	fmt.Fprintf(output, "#define %s_H\n\n", strings.ToUpper(*name))
+
+	fmt.Fprintf(output, "const uint8_t %sFrameCount = %d;\n", *name, len(spritesheet.Frames))
+	fmt.Fprintf(output, "const uint8_t %sFrameWidth = %d;\n", *name, spritesheet.Frames[0].Rect.W)
+	fmt.Fprintf(output, "const uint8_t %sFrameHeight = %d;\n", *name, spritesheet.Frames[0].Rect.H)
+	fmt.Fprintf(output, "const uint8_t PROGMEM %sFrames[][%d] = {\n", *name, spritesheet.Frames[0].Rect.H*spritesheet.Frames[0].Rect.W/8)
 	for n, bitmap := range bitmaps {
 		if n != 0 {
 			fmt.Fprint(output, ",\n")
 		}
-		bitmap.PrintAsciiDicks(output)
+		bitmap.PrintAscii(output)
 		bitmap.PrintByteArray(output)
 	}
 	fmt.Fprintln(output, "\n};")
+
+	fmt.Fprintln(output, "\n#endif")
 }
